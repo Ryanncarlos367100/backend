@@ -1,4 +1,3 @@
-
 import { Router } from "express"
 import multer from "multer"
 import path from "path"
@@ -6,6 +5,7 @@ import { enviarComprovante } from "../controllers/PagamentoController"
 
 const router = Router()
 
+// Armazenamento dos arquivos
 const storage = multer.diskStorage({
   destination: "uploads/comprovantes",
   filename: (req, file, cb) => {
@@ -14,20 +14,32 @@ const storage = multer.diskStorage({
   },
 })
 
-// Configuração do multer para upload de arquivos
+// Extensões/mime types aceitos (inclui .heic e .jpg)
+const allowedTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+  "image/heic",
+  "application/pdf",
+]
+
+// Upload configurado com limite e verificação de tipo
 const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"]
+    console.log("📎 Tipo de arquivo recebido:", file.mimetype)
+
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true)
     } else {
-      cb(new Error("Tipo de arquivo inválido. Envie imagem JPG, PNG ou PDF."))
+      console.warn("❌ Tipo não permitido:", file.mimetype)
+      cb(new Error("Tipo de arquivo inválido. Envie imagem ou PDF."))
     }
   },
 })
 
+// Rota para envio do comprovante
 router.post("/pagamento", upload.single("comprovante"), enviarComprovante)
 
 export default router
