@@ -15,25 +15,23 @@ const storage = multer.diskStorage({
 
 const allowedTypes = [
   "image/jpeg",
-  "image/png",
   "image/jpg",
-  "image/heic", // iPhone
-  "application/pdf",
+  "image/png",
+  "application/pdf"
 ]
 
 const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
   fileFilter: (req, file, cb) => {
-    console.log("📎 Tipo de arquivo:", file.mimetype)
-
+    console.log("📎 Tipo recebido:", file.mimetype)
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true)
     } else {
-      console.warn("❌ Tipo inválido:", file.mimetype)
-      cb(new Error("Tipo de arquivo inválido. Envie imagem ou PDF."))
+      console.warn("❌ Tipo não aceito:", file.mimetype)
+      cb(new Error("Tipo de arquivo inválido. Envie JPG, PNG ou PDF."))
     }
-  },
+  }
 })
 
 router.post("/pagamento", upload.single("comprovante"), enviarComprovante)
