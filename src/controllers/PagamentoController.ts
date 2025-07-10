@@ -16,15 +16,16 @@ const transporter = nodemailer.createTransport({
 
 export const enviarComprovante = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body
+    const { userId, quantidade } = req.body
     const arquivo = req.file
 
-    // ✅ Logs para depuração
+    // ✅ Logs de depuração
     console.log("📥 Recebido envio de comprovante")
     console.log("🧾 userId:", userId)
-    console.log("📁 Arquivo recebido:", arquivo)
+    console.log("🔢 quantidade:", quantidade)
+    console.log("📁 Arquivo recebido:", arquivo?.originalname, "-", arquivo?.mimetype)
 
-    // ✅ Verificação de campos obrigatórios
+    // ✅ Verificações básicas
     if (!userId) {
       console.warn("⚠️ userId não fornecido")
       return res.status(400).json({ message: "ID do usuário não fornecido." })
@@ -39,24 +40,25 @@ export const enviarComprovante = async (req: Request, res: Response) => {
     const user = await User.findById(userId)
     if (!user) {
       console.warn("❌ Usuário não encontrado:", userId)
-      return res.status(404).json({ message: "Usuário não encontrado" })
+      return res.status(404).json({ message: "Usuário não encontrado." })
     }
 
     // ✅ Salva o pagamento no banco
     const pagamento = await Pagamento.create({
       userId,
+      quantidade: quantidade || 1,
       nomeArquivo: arquivo.filename,
       urlArquivo: `/uploads/comprovantes/${arquivo.filename}`,
     })
 
     const filePath = path.resolve("uploads/comprovantes", arquivo.filename)
 
-    // ✅ Envia o comprovante por e-mail com anexo
+    // ✅ Envia o e-mail com o comprovante
     await transporter.sendMail({
       from: `"Bolão Jacobina" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
       subject: "📎 Novo Comprovante Recebido",
-      text: `📨 Novo comprovante enviado por:\n\nNome: ${user.nome}\nEmail: ${user.email}\nTelefone: ${user.telefone}`,
+      text: `📨 Novo comprovante enviado:\n\n👤 Nome: ${user.nome}\n📧 Email: ${user.email}\n📱 Telefone: ${user.telefone}\n\n📄 Arquivo: ${arquivo.originalname}`,
       attachments: [
         {
           filename: arquivo.originalname,
@@ -65,9 +67,9 @@ export const enviarComprovante = async (req: Request, res: Response) => {
       ],
     })
 
-    // ✅ Resposta final
+    // ✅ Resposta de sucesso
     return res.status(201).json({
-      message: "Comprovante enviado com sucesso",
+      message: "Comprovante enviado com sucesso.",
       pagamento,
     })
   } catch (err) {
