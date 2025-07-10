@@ -5,7 +5,7 @@ import { enviarComprovante } from "../controllers/PagamentoController"
 
 const router = Router()
 
-// Armazenamento dos arquivos
+// Armazenamento no disco
 const storage = multer.diskStorage({
   destination: "uploads/comprovantes",
   filename: (req, file, cb) => {
@@ -14,16 +14,18 @@ const storage = multer.diskStorage({
   },
 })
 
-// Extensões/mime types aceitos (inclui .heic e .jpg)
+// Tipos permitidos (ampliado)
 const allowedTypes = [
   "image/jpeg",
-  "image/png",
   "image/jpg",
+  "image/png",
   "image/heic",
+  "image/heif",
+  "image/webp",
+  "image/gif",
   "application/pdf",
 ]
 
-// Upload configurado com limite e verificação de tipo
 const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
@@ -39,7 +41,6 @@ const upload = multer({
   },
 })
 
-// Rota para envio do comprovante
 router.post("/pagamento", upload.single("comprovante"), enviarComprovante)
 
 export default router
