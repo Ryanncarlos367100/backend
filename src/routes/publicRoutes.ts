@@ -27,4 +27,4 @@ router.get("/estatisticas", async (req, res) => {
 })
 
 export default router
-  
+
