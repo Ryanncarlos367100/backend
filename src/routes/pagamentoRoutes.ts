@@ -13,8 +13,11 @@ const storage = multer.diskStorage({
   },
 })
 
-const upload = multer({ storage })
-
+// Configuração do multer para upload de arquivos
+const upload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
+})
 router.post("/pagamento", upload.single("comprovante"), enviarComprovante)
 
 export default router
