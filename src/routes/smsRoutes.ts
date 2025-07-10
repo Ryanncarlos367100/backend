@@ -8,7 +8,14 @@ const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID!
 
 // ✅ Enviar código
 router.post("/enviar-codigo", async (req, res) => {
-  const { telefone } = req.body
+  let { telefone } = req.body
+
+  // Corrige o número para o formato +55DDDNUMERO
+  telefone = telefone.replace(/\D/g, "") // Remove tudo que não for número
+  if (!telefone.startsWith("55")) {
+    telefone = `55${telefone}`
+  }
+  telefone = `+${telefone}`
 
   try {
     await client.verify.v2.services(serviceSid).verifications.create({
@@ -23,10 +30,17 @@ router.post("/enviar-codigo", async (req, res) => {
   }
 })
 
+
 // ✅ Verificar código
 router.post("/verificar-codigo", async (req, res) => {
-  const { telefone, codigo } = req.body
+  let { telefone, codigo } = req.body
 
+  // Formata o número para o padrão internacional
+  telefone = telefone.replace(/\D/g, "")
+  if (!telefone.startsWith("55")) {
+    telefone = `55${telefone}`
+  }
+  telefone = `+${telefone}`
   try {
     const result = await client.verify.v2.services(serviceSid).verificationChecks.create({
       to: telefone,
@@ -43,6 +57,5 @@ router.post("/verificar-codigo", async (req, res) => {
     res.status(500).json({ message: "Erro ao verificar código" })
   }
 })
-
 
 export default router

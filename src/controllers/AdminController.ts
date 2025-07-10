@@ -30,7 +30,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
     if (!match) return res.status(401).json({ message: "Senha incorreta" })
 
     const token = jwt.sign(
-      { id: admin._id, tipo: "admin" },
+      { id: admin._id, tipo: "admin" }, 
       process.env.JWT_SECRET!,
       { expiresIn: "2h" }
     )

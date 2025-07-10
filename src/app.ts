@@ -13,7 +13,12 @@ import pagamentoRoutes from "./routes/pagamentoRoutes"
 
 const app = express()
 
-app.use(cors())
+app.use(cors({
+  origin: "*", // ou: ["https://SEU_SITE.vercel.app"]
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+}))
+
 app.use(express.json())
 app.use("/uploads", express.static(path.resolve("uploads")))
 
