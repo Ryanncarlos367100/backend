@@ -7,6 +7,8 @@ export const criarPalpite = async (req: Request, res: Response) => {
   try {
     const { userId, pagamentoId, palpites } = req.body
     console.log("Palpite recebido:", req.body)
+    return res.status(200).json({ debug: true, recebido: req.body })
+
     if (!userId || !pagamentoId || !Array.isArray(palpites) || palpites.length === 0) {
       return res.status(400).json({ message: "Dados incompletos ou palpites inválidos" })
     }
