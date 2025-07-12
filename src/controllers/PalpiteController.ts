@@ -6,10 +6,11 @@ import mongoose from "mongoose"
 export const criarPalpite = async (req: Request, res: Response) => {
   try {
     const { userId, pagamentoId, palpites } = req.body
-
+    console.log("Palpite recebido:", req.body)
     if (!userId || !pagamentoId || !Array.isArray(palpites) || palpites.length === 0) {
       return res.status(400).json({ message: "Dados incompletos ou palpites inválidos" })
     }
+
 
     // Verifica se já existem palpites desse pagamento
     const palpitesExistentes = await Palpite.find({ userId, pagamentoId })
