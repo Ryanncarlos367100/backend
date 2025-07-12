@@ -12,7 +12,7 @@ export const criarPalpite = async (req: Request, res: Response) => {
     }
 
     const agora = new Date()
-    const dataJogo = new Date("2025-07-12T16:00:00-03:00")
+    const dataJogo = new Date("2025-07-12T18:00:00-03:00")
     if (agora >= dataJogo) {
       return res.status(403).json({ message: "Prazo de palpites encerrado" })
     }
