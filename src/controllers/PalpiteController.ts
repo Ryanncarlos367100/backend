@@ -11,11 +11,13 @@ export const criarPalpite = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Dados incompletos ou palpites inválidos" })
     }
 
-    const agora = new Date()
-    const dataJogo = new Date("2025-07-12T18:00:00-03:00")
-    if (agora >= dataJogo) {
+   const agora = new Date()
+   const dataJogo = new Date("2025-07-12T18:00:00-03:00")
+
+   if (agora.getTime() >= dataJogo.getTime()) {
       return res.status(403).json({ message: "Prazo de palpites encerrado" })
     }
+
 
     // Verifica se já existem palpites desse pagamento
     const palpitesExistentes = await Palpite.find({ userId, pagamentoId })
