@@ -6,10 +6,16 @@ import mongoose from "mongoose"
 export const criarPalpite = async (req: Request, res: Response) => {
   try {
     const { userId, pagamentoId, palpites } = req.body
+
     if (!userId || !pagamentoId || !Array.isArray(palpites) || palpites.length === 0) {
       return res.status(400).json({ message: "Dados incompletos ou palpites inválidos" })
     }
 
+    const agora = new Date()
+    const dataJogo = new Date("2025-07-12T18:00:00-03:00")
+    if (agora >= dataJogo) {
+      return res.status(403).json({ message: "Prazo de palpites encerrado" })
+    }
 
     // Verifica se já existem palpites desse pagamento
     const palpitesExistentes = await Palpite.find({ userId, pagamentoId })
