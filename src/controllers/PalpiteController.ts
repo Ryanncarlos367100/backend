@@ -11,12 +11,6 @@ export const criarPalpite = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Dados incompletos ou palpites inválidos" })
     }
 
-    const agora = new Date()
-    const dataJogo = new Date("2025-07-12T18:00:00-03:00")
-    if (agora >= dataJogo) {
-      return res.status(403).json({ message: "Prazo de palpites encerrado" })
-    }
-
     // Verifica se já existem palpites desse pagamento
     const palpitesExistentes = await Palpite.find({ userId, pagamentoId })
     if (palpitesExistentes.length > 0) {
@@ -42,14 +36,19 @@ export const criarPalpite = async (req: Request, res: Response) => {
 export const listarParticipantes = async (req: Request, res: Response) => {
   try {
     const palpites = await Palpite.find().populate("userId").sort({ "userId.nome": 1 })
-    const lista = palpites.map((p) => ({
-      nome: (p.userId as any)?.nome,
-      email: (p.userId as any)?.email,
-      telefone: (p.userId as any)?.telefone,
-      palpite: { river: p.river, gremio: p.gremio },
-      acertou: p.acertou,
-      criadoEm: p.criadoEm
-    }))
+   const lista = palpites.map((p) => {
+  const user = p.userId as any
+  return {
+    _id: user?._id, // ⚠️ ESSENCIAL
+    nome: user?.nome,
+    email: user?.email,
+    telefone: user?.telefone,
+    palpite: { river: p.river, gremio: p.gremio },
+    acertou: p.acertou,
+    criadoEm: p.criadoEm
+  }
+})
+
     return res.json(lista)
   } catch (err) {
     console.error("Erro ao listar participantes:", err)

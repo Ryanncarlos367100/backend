@@ -1,79 +1,96 @@
 import { Request, Response } from "express"
 import Pagamento from "../models/Pagamento"
-import path from "path"
-import nodemailer from "nodemailer"
 import User from "../models/User"
+import { MercadoPagoConfig, Payment } from "mercadopago"
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT || "587"),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+const mercadopago = new MercadoPagoConfig({
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN as string,
 })
 
-export const enviarComprovante = async (req: Request, res: Response) => {
+// 💸 Criar cobrança Pix automática
+export const criarCobranca = async (req: Request, res: Response) => {
   try {
     const { userId, quantidade } = req.body
-    const arquivo = req.file
 
-    // ✅ Logs de depuração
-    console.log("📥 Recebido envio de comprovante")
-    console.log("🧾 userId:", userId)
-    console.log("🔢 quantidade:", quantidade)
-    console.log("📁 Arquivo recebido:", arquivo?.originalname, "-", arquivo?.mimetype)
-
-    // ✅ Verificações básicas
-    if (!userId) {
-      console.warn("⚠️ userId não fornecido")
-      return res.status(400).json({ message: "ID do usuário não fornecido." })
+    if (!userId || !quantidade) {
+      return res.status(400).json({ message: "Dados incompletos." })
     }
 
-    if (!arquivo) {
-      console.warn("⚠️ Nenhum arquivo foi enviado")
-      return res.status(400).json({ message: "Nenhum arquivo foi enviado." })
-    }
-
-    // ✅ Verifica se o usuário existe
     const user = await User.findById(userId)
-    if (!user) {
-      console.warn("❌ Usuário não encontrado:", userId)
-      return res.status(404).json({ message: "Usuário não encontrado." })
-    }
+    if (!user) return res.status(404).json({ message: "Usuário não encontrado." })
 
-    // ✅ Salva o pagamento no banco
-    const pagamento = await Pagamento.create({
-      userId,
-      quantidade: quantidade || 1,
-      nomeArquivo: arquivo.filename,
-      urlArquivo: `/uploads/comprovantes/${arquivo.filename}`,
-    })
+    const valor = quantidade * 10
 
-    const filePath = path.resolve("uploads/comprovantes", arquivo.filename)
-
-    // ✅ Envia o e-mail com o comprovante
-    await transporter.sendMail({
-      from: `"Bolão Jacobina" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: "📎 Novo Comprovante Recebido",
-      text: `📨 Novo comprovante enviado:\n\n👤 Nome: ${user.nome}\n📧 Email: ${user.email}\n📱 Telefone: ${user.telefone}\n\n📄 Arquivo: ${arquivo.originalname}`,
-      attachments: [
-        {
-          filename: arquivo.originalname,
-          path: filePath,
+    const pagamento = await new Payment(mercadopago).create({
+      body: {
+        transaction_amount: valor,
+        payment_method_id: "pix",
+        payer: {
+          email: user.email || "comprador@bolao.com",
+          first_name: user.nome,
         },
-      ],
+      },
     })
 
-    // ✅ Resposta de sucesso
-    return res.status(201).json({
-      message: "Comprovante enviado com sucesso.",
-      pagamento,
+    const { id, point_of_interaction, status, transaction_amount } = pagamento
+
+    if (!point_of_interaction?.transaction_data?.qr_code || !point_of_interaction.transaction_data.qr_code_base64) {
+      return res.status(500).json({ message: "QR Code não disponível no pagamento." })
+    } 
+
+    const qrCode = point_of_interaction.transaction_data.qr_code
+    const qrCodeBase64 = point_of_interaction.transaction_data.qr_code_base64
+
+
+    const novoPagamento = await Pagamento.create({
+      userId,
+      paymentId: id,
+      status,
+      valor: transaction_amount,
+      quantidade,
     })
-  } catch (err) {
-    console.error("❌ Erro ao enviar comprovante:", err)
-    return res.status(500).json({ message: "Erro interno ao processar o comprovante." })
+
+    return res.status(201).json({
+      message: "Cobrança criada com sucesso.",
+      pagamentoId: novoPagamento._id,
+      mercadopagoId: id,
+      qrCode,
+      qrCodeBase64,
+    })
+  } catch (error) {
+    console.error("Erro ao criar cobrança:", error)
+    return res.status(500).json({ message: "Erro ao criar cobrança." })
   }
 }
+
+// 🔍 Verificar status do pagamento Pix
+export const verificarPagamento = async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  try {
+    const pagamento = await new Payment(mercadopago).get({ id })
+
+    const status = pagamento.status
+    const valor = pagamento.transaction_amount
+
+    if (status === "approved" && valor && valor >= 15) {
+      return res.json({ pago: true })
+    }
+
+    return res.json({ pago: false, status, valor })
+  } catch (error) {
+    console.error("Erro ao verificar pagamento:", error)
+    return res.status(500).json({ message: "Erro ao verificar pagamento." })
+  }
+}
+
+export const receberNotificacao = async (req: Request, res: Response) => {
+  try {
+    console.log("🔔 Notificação recebida:", req.body)
+    res.sendStatus(200)
+  } catch (error) {
+    console.error("Erro ao processar notificação:", error)
+    res.status(500).json({ message: "Erro no webhook." })
+  }
+}
+

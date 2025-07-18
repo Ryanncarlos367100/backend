@@ -6,8 +6,10 @@ const pagamentoSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  nomeArquivo: String,
-  urlArquivo: String,
+  paymentId: String,
+  status: String,
+  valor: Number,
+  quantidade: { type: Number, default: 1 },
   enviadoEm: {
     type: Date,
     default: Date.now,
