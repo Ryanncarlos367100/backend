@@ -17,13 +17,15 @@ const app = express()
 
 app.use(cors({
   origin: [
-    "http://localhost:3000", // para testes locais
-    "https://bolao-frontend-j4i4lgrvy-ryanncarlos367100s-projects.vercel.app", // Vercel
-    "https://xn--bolojacobina-4bb.com", // domínio HTTPS com Punycode
+    "http://localhost:3000", // testes locais
+    "https://bolaoja.vercel.app", // seu frontend na Vercel
+    "https://bolãojacobina.com", // domínio com acento
+    "https://xn--bolojacobina-4bb.com", // versão codificada (punycode)
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }))
+
 
 app.use(express.json())
 app.use("/uploads", express.static(path.resolve("uploads")))
