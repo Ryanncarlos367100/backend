@@ -25,6 +25,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
       body: {
         transaction_amount: valor,
         payment_method_id: "pix",
+        notification_url: "https://xn--bolojacobina-4bb.com/api/webhook", // <- ESSENCIAL
         payer: {
           email: user.email || "comprador@bolao.com",
           first_name: user.nome,
@@ -87,10 +88,25 @@ export const verificarPagamento = async (req: Request, res: Response) => {
 export const receberNotificacao = async (req: Request, res: Response) => {
   try {
     console.log("🔔 Notificação recebida:", req.body)
+
+    const paymentId = req.body.data?.id
+    if (!paymentId) {
+      return res.sendStatus(400)
+    }
+
+    // Consulta o status real do pagamento
+    const pagamentoInfo = await new Payment(mercadopago).get({ id: paymentId })
+
+    // Atualiza no banco
+    await Pagamento.findOneAndUpdate(
+      { paymentId },
+      { status: pagamentoInfo.status }
+    )
+
+    console.log("✅ Pagamento atualizado:", pagamentoInfo.status)
     res.sendStatus(200)
   } catch (error) {
     console.error("Erro ao processar notificação:", error)
     res.status(500).json({ message: "Erro no webhook." })
   }
 }
-
