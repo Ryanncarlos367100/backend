@@ -25,7 +25,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
       body: {
         transaction_amount: valor,
         payment_method_id: "pix",
-        notification_url: "https://xn--bolojacobina-4bb.com/api/webhook", // <- ESSENCIAL
+        notification_url: "https://xn--bolojacobina-4bb.com/api/webhook",
         payer: {
           email: user.email || "comprador@bolao.com",
           first_name: user.nome,
@@ -37,11 +37,10 @@ export const criarCobranca = async (req: Request, res: Response) => {
 
     if (!point_of_interaction?.transaction_data?.qr_code || !point_of_interaction.transaction_data.qr_code_base64) {
       return res.status(500).json({ message: "QR Code não disponível no pagamento." })
-    } 
+    }
 
     const qrCode = point_of_interaction.transaction_data.qr_code
     const qrCodeBase64 = point_of_interaction.transaction_data.qr_code_base64
-
 
     const novoPagamento = await Pagamento.create({
       userId,
@@ -63,37 +62,38 @@ export const criarCobranca = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro ao criar cobrança." })
   }
 }
+
 // 🔍 Verificar status do pagamento Pix
 export const verificarPagamento = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params
 
   try {
-    const pagamentoDB = await Pagamento.findById(id);
+    const pagamentoDB = await Pagamento.findById(id)
     if (!pagamentoDB) {
-      return res.status(404).json({ message: "Pagamento não encontrado." });
+      return res.status(404).json({ message: "Pagamento não encontrado." })
     }
 
     if (!pagamentoDB.paymentId) {
-      return res.status(400).json({ message: "paymentId inválido ou ausente." });
+      return res.status(400).json({ message: "paymentId inválido ou ausente." })
     }
 
-    const pagamentoMP = await new Payment(mercadopago).get({ id: pagamentoDB.paymentId });
-    const status = pagamentoMP.status;
-    const valor = pagamentoMP.transaction_amount;
+    const pagamentoMP = await new Payment(mercadopago).get({ id: pagamentoDB.paymentId })
+    const status = pagamentoMP.status
+    const valor = Number(pagamentoMP.transaction_amount || 0)
 
     if (pagamentoDB.status !== status) {
-      pagamentoDB.status = status;
-      await pagamentoDB.save();
+      pagamentoDB.status = status
+      await pagamentoDB.save()
     }
 
-    const pago = status === "approved" && typeof valor === "number" && valor >= 10;
+    const pago = status === "approved" && valor >= 10
 
-    return res.json({ pago, status, valor });
+    return res.json({ pago, status, valor })
   } catch (error) {
-    console.error("Erro ao verificar pagamento:", error);
-    return res.status(500).json({ message: "Erro ao verificar pagamento." });
+    console.error("Erro ao verificar pagamento:", error)
+    return res.status(500).json({ message: "Erro ao verificar pagamento." })
   }
-};
+}
 
 // 📬 Receber notificações do Mercado Pago
 export const receberNotificacao = async (req: Request, res: Response) => {
@@ -105,10 +105,8 @@ export const receberNotificacao = async (req: Request, res: Response) => {
       return res.sendStatus(400)
     }
 
-    // Consulta o status real do pagamento
     const pagamentoInfo = await new Payment(mercadopago).get({ id: paymentId })
 
-    // Atualiza no banco
     await Pagamento.findOneAndUpdate(
       { paymentId },
       { status: pagamentoInfo.status }
