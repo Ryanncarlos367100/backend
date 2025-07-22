@@ -14,3 +14,4 @@ router.post("/pagamento/pix", criarCobranca)
 router.get("/pagamento/verificar/:id", verificarPagamento)
 
 export default router
+  

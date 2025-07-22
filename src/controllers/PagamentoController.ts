@@ -12,6 +12,8 @@ export const criarCobranca = async (req: Request, res: Response) => {
   try {
     const { userId, quantidade } = req.body
 
+    console.log("📥 Requisição recebida:", { userId, quantidade })
+
     if (!userId || !quantidade) {
       return res.status(400).json({ message: "Dados incompletos." })
     }
@@ -20,6 +22,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "Usuário não encontrado." })
 
     const valor = quantidade * 15
+    console.log("💰 Valor calculado:", valor)
 
     const pagamento = await new Payment(mercadopago).create({
       body: {
@@ -37,6 +40,12 @@ export const criarCobranca = async (req: Request, res: Response) => {
     })
 
     const { id, point_of_interaction, status, transaction_amount } = pagamento
+
+    console.log("🧾 Resposta do Mercado Pago:", {
+      id,
+      status,
+      transaction_amount,
+    })
 
     if (
       !point_of_interaction?.transaction_data?.qr_code ||
