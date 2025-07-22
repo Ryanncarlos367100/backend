@@ -68,7 +68,7 @@ export const verificarPagamento = async (req: Request, res: Response) => {
   const { id } = req.params
 
   try {
-    const pagamentoDB = await Pagamento.findById(id)
+    const pagamentoDB = await Pagamento.findOne({ paymentId: id })
     if (!pagamentoDB) {
       return res.status(404).json({ message: "Pagamento não encontrado." })
     }
