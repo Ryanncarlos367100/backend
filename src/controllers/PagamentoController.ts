@@ -68,21 +68,26 @@ export const verificarPagamento = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    // Consulta no Mercado Pago
-    const pagamentoMP = await new Payment(mercadopago).get({ id });
+    const pagamentoDB = await Pagamento.findById(id);
+    if (!pagamentoDB) {
+      return res.status(404).json({ message: "Pagamento não encontrado." });
+    }
 
+    if (!pagamentoDB.paymentId) {
+      return res.status(400).json({ message: "paymentId inválido ou ausente." });
+    }
+
+    const pagamentoMP = await new Payment(mercadopago).get({ id: pagamentoDB.paymentId });
     const status = pagamentoMP.status;
     const valor = pagamentoMP.transaction_amount;
 
-    // Atualiza o status no banco se tiver pagamento salvo
-    const pagamentoDB = await Pagamento.findOne({ paymentId: id });
-    if (pagamentoDB && pagamentoDB.status !== status) {
+    if (pagamentoDB.status !== status) {
       pagamentoDB.status = status;
       await pagamentoDB.save();
     }
 
-    // Retorna true se pago
-    const pago = status === "approved" && valor && valor >= 10; // 10 por palpite
+    const pago = status === "approved" && typeof valor === "number" && valor >= 10;
+
     return res.json({ pago, status, valor });
   } catch (error) {
     console.error("Erro ao verificar pagamento:", error);
@@ -90,7 +95,7 @@ export const verificarPagamento = async (req: Request, res: Response) => {
   }
 };
 
-
+// 📬 Receber notificações do Mercado Pago
 export const receberNotificacao = async (req: Request, res: Response) => {
   try {
     console.log("🔔 Notificação recebida:", req.body)
