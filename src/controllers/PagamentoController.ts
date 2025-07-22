@@ -63,27 +63,33 @@ export const criarCobranca = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro ao criar cobrança." })
   }
 }
-
 // 🔍 Verificar status do pagamento Pix
 export const verificarPagamento = async (req: Request, res: Response) => {
-  const { id } = req.params
+  const { id } = req.params;
 
   try {
-    const pagamento = await new Payment(mercadopago).get({ id })
+    // Consulta no Mercado Pago
+    const pagamentoMP = await new Payment(mercadopago).get({ id });
 
-    const status = pagamento.status
-    const valor = pagamento.transaction_amount
+    const status = pagamentoMP.status;
+    const valor = pagamentoMP.transaction_amount;
 
-    if (status === "approved" && valor && valor >= 15) {
-      return res.json({ pago: true })
+    // Atualiza o status no banco se tiver pagamento salvo
+    const pagamentoDB = await Pagamento.findOne({ paymentId: id });
+    if (pagamentoDB && pagamentoDB.status !== status) {
+      pagamentoDB.status = status;
+      await pagamentoDB.save();
     }
 
-    return res.json({ pago: false, status, valor })
+    // Retorna true se pago
+    const pago = status === "approved" && valor && valor >= 10; // 10 por palpite
+    return res.json({ pago, status, valor });
   } catch (error) {
-    console.error("Erro ao verificar pagamento:", error)
-    return res.status(500).json({ message: "Erro ao verificar pagamento." })
+    console.error("Erro ao verificar pagamento:", error);
+    return res.status(500).json({ message: "Erro ao verificar pagamento." });
   }
-}
+};
+
 
 export const receberNotificacao = async (req: Request, res: Response) => {
   try {
