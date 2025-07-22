@@ -68,29 +68,39 @@ export const verificarPagamento = async (req: Request, res: Response) => {
   const { id } = req.params
 
   try {
-    const pagamentoDB = await Pagamento.findOne({ paymentId: id })
+    console.log("🔍 Verificando pagamento ID:", id)
+
+    const pagamentoDB = await Pagamento.findById(id)
     if (!pagamentoDB) {
+      console.warn("⚠️ Pagamento não encontrado no banco de dados")
       return res.status(404).json({ message: "Pagamento não encontrado." })
     }
 
+    console.log("📄 Pagamento no banco:", pagamentoDB)
+
     if (!pagamentoDB.paymentId) {
+      console.warn("⚠️ paymentId ausente no banco de dados")
       return res.status(400).json({ message: "paymentId inválido ou ausente." })
     }
 
     const pagamentoMP = await new Payment(mercadopago).get({ id: pagamentoDB.paymentId })
+    console.log("📦 Dados do Mercado Pago:", pagamentoMP)
+
     const status = pagamentoMP.status
     const valor = Number(pagamentoMP.transaction_amount || 0)
 
     if (pagamentoDB.status !== status) {
       pagamentoDB.status = status
       await pagamentoDB.save()
+      console.log("✅ Status atualizado para:", status)
     }
 
     const pago = status === "approved" && valor >= 10
 
+    console.log("💸 Resultado final:", { pago, status, valor })
     return res.json({ pago, status, valor })
   } catch (error) {
-    console.error("Erro ao verificar pagamento:", error)
+    console.error("❌ Erro ao verificar pagamento:", error)
     return res.status(500).json({ message: "Erro ao verificar pagamento." })
   }
 }
