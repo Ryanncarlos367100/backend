@@ -22,10 +22,13 @@ export const criarCobranca = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "Usuário não encontrado." })
 
     const valor = quantidade * 15
-    console.log("🔢 Enviando para o Mercado Pago:", {
-      valor,
-      email: user.email,
-      nome: user.nome,
+    console.log("💰 Valor calculado:", valor)
+
+    // LOG EXTRA PRA CONFERIR O ENVIO
+    console.log("🧾 Enviando para Mercado Pago:", {
+      transaction_amount: valor,
+      quantidade,
+      userId,
     })
 
     const pagamento = await new Payment(mercadopago).create({
@@ -39,7 +42,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
         },
         external_reference: `${userId}-${Date.now()}`,
         description: "Palpite do Bolão Municipal",
-        statement_descriptor: "BolaoJacobina"
+        statement_descriptor: "BolaoJacobina",
       },
     })
 
@@ -77,7 +80,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
       qrCodeBase64,
     })
   } catch (error) {
-    console.error("❌ Erro ao criar cobrança:", error)
+    console.error("Erro ao criar cobrança:", error)
     return res.status(500).json({ message: "Erro ao criar cobrança." })
   }
 }
