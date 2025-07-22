@@ -64,6 +64,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
 }
 
 // 🔍 Verificar status do pagamento Pix
+// 🔍 Verificar status do pagamento Pix
 export const verificarPagamento = async (req: Request, res: Response) => {
   const { id } = req.params
 
@@ -95,7 +96,11 @@ export const verificarPagamento = async (req: Request, res: Response) => {
       console.log("✅ Status atualizado para:", status)
     }
 
-    const pago = status === "approved" && valor >= 10
+    // ✅ Compara somente se o valor do banco for numérico
+    let pago = false
+    if (status === "approved" && typeof pagamentoDB.valor === "number") {
+      pago = valor >= pagamentoDB.valor
+    }
 
     console.log("💸 Resultado final:", { pago, status, valor })
     return res.json({ pago, status, valor })
@@ -104,6 +109,7 @@ export const verificarPagamento = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro ao verificar pagamento." })
   }
 }
+
 
 // 📬 Receber notificações do Mercado Pago
 export const receberNotificacao = async (req: Request, res: Response) => {
