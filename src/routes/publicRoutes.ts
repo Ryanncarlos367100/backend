@@ -8,7 +8,7 @@ router.get("/estatisticas", async (req, res) => {
     const totalPalpites = await Palpite.countDocuments()
     const totalParticipantes = await Palpite.distinct("userId").then(ids => ids.length)
 
-    const valorPorPalpite = 10
+    const valorPorPalpite = 15
     const totalArrecadado = totalPalpites * valorPorPalpite
     const comissao = totalArrecadado * 0.3
     const premio = totalArrecadado * 0.7
