@@ -19,7 +19,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ message: "Usuário não encontrado." })
 
-    const valor = quantidade * 10
+    const valor = quantidade * 15
 
     const pagamento = await new Payment(mercadopago).create({
       body: {
@@ -30,12 +30,18 @@ export const criarCobranca = async (req: Request, res: Response) => {
           email: user.email || "comprador@bolao.com",
           first_name: user.nome,
         },
+        external_reference: `${userId}-${Date.now()}`,
+        description: "Palpite do Bolão Municipal",
+        statement_descriptor: "BolaoJacobina"
       },
     })
 
     const { id, point_of_interaction, status, transaction_amount } = pagamento
 
-    if (!point_of_interaction?.transaction_data?.qr_code || !point_of_interaction.transaction_data.qr_code_base64) {
+    if (
+      !point_of_interaction?.transaction_data?.qr_code ||
+      !point_of_interaction.transaction_data.qr_code_base64
+    ) {
       return res.status(500).json({ message: "QR Code não disponível no pagamento." })
     }
 
@@ -63,7 +69,6 @@ export const criarCobranca = async (req: Request, res: Response) => {
   }
 }
 
-// 🔍 Verificar status do pagamento Pix
 // 🔍 Verificar status do pagamento Pix
 export const verificarPagamento = async (req: Request, res: Response) => {
   const { id } = req.params
@@ -96,7 +101,6 @@ export const verificarPagamento = async (req: Request, res: Response) => {
       console.log("✅ Status atualizado para:", status)
     }
 
-    // ✅ Compara somente se o valor do banco for numérico
     let pago = false
     if (status === "approved" && typeof pagamentoDB.valor === "number") {
       pago = valor >= pagamentoDB.valor
@@ -110,8 +114,7 @@ export const verificarPagamento = async (req: Request, res: Response) => {
   }
 }
 
-
-// 📬 Receber notificações do Mercado Pago
+// 📬 Webhook para atualizar o pagamento
 export const receberNotificacao = async (req: Request, res: Response) => {
   try {
     console.log("🔔 Notificação recebida:", req.body)
