@@ -20,8 +20,8 @@ export const criarPalpite = async (req: Request, res: Response) => {
     const palpitesComInfo = palpites.map((p: any) => ({
       userId,
       pagamentoId,
-      river: p.river,
-      gremio: p.gremio,
+      corinthians: p.corinthians,
+      cruzeiro: p.cruzeiro,
     }))
 
     const palpitesSalvos = await Palpite.insertMany(palpitesComInfo)
@@ -43,7 +43,7 @@ export const listarParticipantes = async (req: Request, res: Response) => {
     nome: user?.nome,
     email: user?.email,
     telefone: user?.telefone,
-    palpite: { river: p.river, gremio: p.gremio },
+    palpite: { corinthians: p.corinthians, cruzeiro: p.cruzeiro },
     acertou: p.acertou,
     criadoEm: p.criadoEm
   }

@@ -5,15 +5,15 @@ import Palpite from "../models/Palpite"
 
 export const registrarResultado = async (req: Request, res: Response) => {
   try {
-    const { river, gremio } = req.body
-    if (river == null || gremio == null) {
+    const { corinthians, cruzeiro } = req.body
+    if (corinthians == null || cruzeiro == null) {
       return res.status(400).json({ message: "Campos obrigatórios" })
     }
 
-    const resultado = await Resultado.create({ river, gremio })
+    const resultado = await Resultado.create({ corinthians, cruzeiro })
 
     await Palpite.updateMany({}, { acertou: false })
-    await Palpite.updateMany({ river, gremio }, { acertou: true })
+    await Palpite.updateMany({ corinthians, cruzeiro }, { acertou: true })
 
     return res.status(201).json({ message: "Resultado registrado" })
   } catch (err) {
@@ -33,7 +33,7 @@ export const buscarResultado = async (req: Request, res: Response) => {
     const lista = vencedores.map((p) => ({ nome: (p.userId as any)?.nome || "Participante" }))
 
     return res.json({
-      resultado: { river: resultado.river, gremio: resultado.gremio },
+      resultado: { corinthians: resultado.corinthians, cruzeiro: resultado.cruzeiro },
       totalGanhadores: lista.length,
       vencedores: lista,
     })
