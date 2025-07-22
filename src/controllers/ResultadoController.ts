@@ -7,20 +7,33 @@ export const registrarResultado = async (req: Request, res: Response) => {
   try {
     const { corinthians, cruzeiro } = req.body
     if (corinthians == null || cruzeiro == null) {
-      return res.status(400).json({ message: "Campos obrigatórios" })
+      return res.status(400).json({ message: "Campos obrigatórios" }) 
     }
 
+    // Salva o resultado
     const resultado = await Resultado.create({ corinthians, cruzeiro })
 
+    // Zera todos os palpites anteriores
     await Palpite.updateMany({}, { acertou: false })
-    await Palpite.updateMany({ corinthians, cruzeiro }, { acertou: true })
 
-    return res.status(201).json({ message: "Resultado registrado" })
+    // Busca os primeiros 4 palpites corretos (por ordem de criação)
+    const palpitesVencedores = await Palpite.find({ corinthians, cruzeiro })
+      .sort({ criadoEm: 1 }) // Mais antigos primeiro
+      .limit(4)
+
+    // Pega os IDs desses palpites
+    const idsVencedores = palpitesVencedores.map((p) => p._id)
+
+    // Marca esses como acertou: true
+    await Palpite.updateMany({ _id: { $in: idsVencedores } }, { acertou: true })
+
+    return res.status(201).json({ message: "Resultado registrado com até 4 ganhadores" })
   } catch (err) {
     console.error("Erro ao registrar resultado:", err)
     return res.status(500).json({ message: "Erro interno" })
   }
 }
+
 
 export const buscarResultado = async (req: Request, res: Response) => {
   try {
