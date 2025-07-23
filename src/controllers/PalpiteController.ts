@@ -11,7 +11,6 @@ export const criarPalpite = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Dados incompletos ou palpites inválidos" })
     }
 
-    // Verifica se já existem palpites desse pagamento
     const palpitesExistentes = await Palpite.find({ userId, pagamentoId })
     if (palpitesExistentes.length > 0) {
       return res.status(400).json({ message: "Palpites já enviados para esse pagamento" })
@@ -35,21 +34,39 @@ export const criarPalpite = async (req: Request, res: Response) => {
 
 export const listarParticipantes = async (req: Request, res: Response) => {
   try {
-    const palpites = await Palpite.find().populate("userId").sort({ "userId.nome": 1 })
-   const lista = palpites.map((p) => {
-  const user = p.userId as any
-  return {
-    _id: user?._id, // ⚠️ ESSENCIAL
-    nome: user?.nome,
-    email: user?.email,
-    telefone: user?.telefone,
-    palpite: { corinthians: p.corinthians, cruzeiro: p.cruzeiro },
-    acertou: p.acertou,
-    criadoEm: p.criadoEm
-  }
-})
+    const palpites = await Palpite.find().populate("userId").sort({ criadoEm: 1 })
 
-    return res.json(lista)
+    const mapa = new Map<string, any>()
+
+    palpites.forEach((p) => {
+      const user = p.userId as any
+      const userId = user?._id?.toString()
+      if (!userId) return
+
+      if (!mapa.has(userId)) {
+        mapa.set(userId, {
+          _id: userId,
+          nome: user.nome,
+          email: user.email,
+          telefone: user.telefone,
+          criadoEm: p.criadoEm,
+          palpite: [],
+          acertou: false
+        })
+      }
+
+      const participante = mapa.get(userId)
+      participante.palpite.push({
+        corinthians: p.corinthians,
+        cruzeiro: p.cruzeiro
+      })
+
+      if (p.acertou) {
+        participante.acertou = true
+      }
+    })
+
+    return res.json(Array.from(mapa.values()))
   } catch (err) {
     console.error("Erro ao listar participantes:", err)
     return res.status(500).json({ message: "Erro ao buscar participantes" })
