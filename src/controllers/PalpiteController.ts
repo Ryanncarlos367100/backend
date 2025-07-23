@@ -32,9 +32,12 @@ export const criarPalpite = async (req: Request, res: Response) => {
   }
 }
 
-export const listarParticipantes = async (req: Request, res: Response) => {
+
+export const listarParticipantes = async (_req: Request, res: Response) => {
   try {
-    const palpites = await Palpite.find().populate("userId").sort({ criadoEm: 1 })
+    const palpites = await Palpite.find()
+      .populate("userId")
+      .sort({ criadoEm: 1 })
 
     const mapa = new Map<string, any>()
 
@@ -49,16 +52,17 @@ export const listarParticipantes = async (req: Request, res: Response) => {
           nome: user.nome,
           email: user.email,
           telefone: user.telefone,
-          criadoEm: p.criadoEm,
           palpite: [],
           acertou: false
         })
       }
 
       const participante = mapa.get(userId)
+
       participante.palpite.push({
         corinthians: p.corinthians,
-        cruzeiro: p.cruzeiro
+        cruzeiro: p.cruzeiro,
+        criadoEm: p.criadoEm // ⏰ Adiciona data/hora de cada palpite
       })
 
       if (p.acertou) {
