@@ -24,7 +24,6 @@ export const criarCobranca = async (req: Request, res: Response) => {
     const valor = quantidade * 15
     console.log("💰 Valor calculado:", valor)
 
-    // LOG EXTRA PRA CONFERIR O ENVIO
     console.log("🧾 Enviando para Mercado Pago:", {
       transaction_amount: valor,
       quantidade,
@@ -82,5 +81,69 @@ export const criarCobranca = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erro ao criar cobrança:", error)
     return res.status(500).json({ message: "Erro ao criar cobrança." })
+  }
+}
+
+// 🔍 Verificar status do pagamento Pix
+export const verificarPagamento = async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  try {
+    console.log("🔍 Verificando pagamento ID:", id)
+
+    const pagamentoDB = await Pagamento.findById(id)
+    if (!pagamentoDB) {
+      console.warn("⚠️ Pagamento não encontrado no banco de dados")
+      return res.status(404).json({ message: "Pagamento não encontrado." })
+    }
+
+    if (!pagamentoDB.paymentId) {
+      return res.status(400).json({ message: "paymentId inválido ou ausente." })
+    }
+
+    const pagamentoMP = await new Payment(mercadopago).get({ id: pagamentoDB.paymentId })
+
+    const status = pagamentoMP.status
+    const valor = Number(pagamentoMP.transaction_amount || 0)
+
+    if (pagamentoDB.status !== status) {
+      pagamentoDB.status = status
+      await pagamentoDB.save()
+    }
+
+    let pago = false
+    if (status === "approved" && typeof pagamentoDB.valor === "number") {
+      pago = valor >= pagamentoDB.valor
+    }
+
+    return res.json({ pago, status, valor })
+  } catch (error) {
+    console.error("❌ Erro ao verificar pagamento:", error)
+    return res.status(500).json({ message: "Erro ao verificar pagamento." })
+  }
+}
+
+// 📬 Webhook para atualizar o pagamento
+export const receberNotificacao = async (req: Request, res: Response) => {
+  try {
+    console.log("🔔 Notificação recebida:", req.body)
+
+    const paymentId = req.body.data?.id
+    if (!paymentId) {
+      return res.sendStatus(400)
+    }
+
+    const pagamentoInfo = await new Payment(mercadopago).get({ id: paymentId })
+
+    await Pagamento.findOneAndUpdate(
+      { paymentId },
+      { status: pagamentoInfo.status }
+    )
+
+    console.log("✅ Pagamento atualizado:", pagamentoInfo.status)
+    res.sendStatus(200)
+  } catch (error) {
+    console.error("Erro ao processar notificação:", error)
+    res.status(500).json({ message: "Erro no webhook." })
   }
 }
