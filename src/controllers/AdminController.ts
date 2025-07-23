@@ -76,6 +76,30 @@ export const excluirUsuario = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro interno ao excluir" })
   }
 }
+// Estatísticas do painel do admin
+export const estatisticasPainel = async (_req: Request, res: Response) => {
+  try {
+    const palpites = await Palpite.find()
+
+    const totalPalpites = palpites.length
+    const valorPorPalpite = 15
+    const totalArrecadado = totalPalpites * valorPorPalpite
+
+    const comissao = totalArrecadado * 0.3 // 30%
+    const premio = totalArrecadado - comissao
+
+    return res.json({
+      totalPalpites,
+      totalArrecadado,
+      comissao,
+      premio
+    })
+  } catch (err) {
+    console.error("Erro ao calcular estatísticas:", err)
+    return res.status(500).json({ message: "Erro ao calcular estatísticas" })
+  }
+}
+
 
 // Cadastrar usuário (cliente) pelo admin
 export const cadastrarUsuario = async (req: Request, res: Response) => {
