@@ -147,3 +147,15 @@ export const receberNotificacao = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Erro no webhook." })
   }
 }
+
+// Apagar todos os pagamentos
+export const apagarTodosPagamentos = async (req: Request, res: Response) => {
+  try {
+    await Pagamento.deleteMany({});
+    return res.status(200).json({ message: "Todos os pagamentos foram apagados." });
+  } catch (error) {
+    console.error("Erro ao apagar pagamentos:", error);
+    return res.status(500).json({ message: "Erro ao apagar pagamentos", error });
+  }
+};
+
