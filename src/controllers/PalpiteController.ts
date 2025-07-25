@@ -20,7 +20,7 @@ export const criarPalpite = async (req: Request, res: Response) => {
       userId,
       pagamentoId,
       corinthians: p.corinthians,
-      cruzeiro: p.cruzeiro,
+      palmeiras: p.palmeiras,
     }))
 
     const palpitesSalvos = await Palpite.insertMany(palpitesComInfo)
@@ -61,7 +61,7 @@ export const listarParticipantes = async (_req: Request, res: Response) => {
 
       participante.palpite.push({
         corinthians: p.corinthians,
-        cruzeiro: p.cruzeiro,
+        palmeiras: p.palmeiras,
         criadoEm: p.criadoEm // ⏰ Adiciona data/hora de cada palpite
       })
 

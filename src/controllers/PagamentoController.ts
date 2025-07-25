@@ -21,7 +21,7 @@ export const criarCobranca = async (req: Request, res: Response) => {
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ message: "Usuário não encontrado." })
 
-    const valor = quantidade * 15
+    const valor = quantidade * 8
     console.log("💰 Valor calculado:", valor)
 
     console.log("🧾 Enviando para Mercado Pago:", {

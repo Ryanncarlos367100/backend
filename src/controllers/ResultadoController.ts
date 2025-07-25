@@ -5,19 +5,19 @@ import Palpite from "../models/Palpite"
 
 export const registrarResultado = async (req: Request, res: Response) => {
   try {
-    const { corinthians, cruzeiro } = req.body
-    if (corinthians == null || cruzeiro == null) {
+    const { corinthians, palmeiras } = req.body
+    if (corinthians == null || palmeiras == null) {
       return res.status(400).json({ message: "Campos obrigatórios" }) 
     }
 
     // Salva o resultado
-    const resultado = await Resultado.create({ corinthians, cruzeiro })
+    const resultado = await Resultado.create({ corinthians, palmeiras })
 
     // Zera todos os palpites anteriores
     await Palpite.updateMany({}, { acertou: false })
 
     // Busca os primeiros 4 palpites corretos (por ordem de criação)
-    const palpitesVencedores = await Palpite.find({ corinthians, cruzeiro })
+    const palpitesVencedores = await Palpite.find({ corinthians, palmeiras })
       .sort({ criadoEm: 1 }) // Mais antigos primeiro
       .limit(4)
 
@@ -46,7 +46,7 @@ export const buscarResultado = async (req: Request, res: Response) => {
     const lista = vencedores.map((p) => ({ nome: (p.userId as any)?.nome || "Participante" }))
 
     return res.json({
-      resultado: { corinthians: resultado.corinthians, cruzeiro: resultado.cruzeiro },
+      resultado: { corinthians: resultado.corinthians, palmeiras: resultado.palmeiras },
       totalGanhadores: lista.length,
       vencedores: lista,
     })
