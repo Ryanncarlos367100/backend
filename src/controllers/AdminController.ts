@@ -82,7 +82,7 @@ export const estatisticasPainel = async (_req: Request, res: Response) => {
     const palpites = await Palpite.find()
 
     const totalPalpites = palpites.length
-    const valorPorPalpite = 15
+    const valorPorPalpite = 8
     const totalArrecadado = totalPalpites * valorPorPalpite
 
     const comissao = totalArrecadado * 0.3 // 30%
